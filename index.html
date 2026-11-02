@@ -24,6 +24,9 @@
         </div>
       </div>
       <div class="header-badges">
+        <span class="badge" id="cloudStatusBadge" style="background:rgba(59, 130, 246, 0.15); color:#60a5fa; border:1px solid rgba(59, 130, 246, 0.3);">
+          ☁️ Cloud: Local Only
+        </span>
         <span class="badge live"><span class="pulse-dot"></span> 24/7 ACTIVE</span>
         <span class="badge" id="currentClock">--:--:--</span>
       </div>
@@ -494,6 +497,68 @@
 
       <!-- TAB 5: SETTINGS & CALIBRATION TABLE -->
       <div class="tab-pane" id="tabSettings">
+
+        <!-- Google Firebase Cloud Sync Card -->
+        <div class="card-section" style="border: 1px solid #3b82f6; background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));">
+          <div class="section-header">
+            <div>
+              <div class="section-title text-complock">☁️ Google Firebase Cloud Sync (മൾട്ടി-ഫോൺ ലൈവ് സിങ്കിങ്)</div>
+              <div class="section-subtitle">വ്യത്യസ്ത ഫോണുകളിൽ വ്യത്യസ്ത ഇന്റർനെറ്റിലിരുന്ന് ഡാറ്റ ഒരേസമയം സിങ്ക് ചെയ്യാൻ</div>
+            </div>
+            <span class="badge" id="firebaseStatusPill" style="background:#334155; color:#94a3b8;">
+              Status: Local Only
+            </span>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size:0.85rem; color:#cbd5e1; margin-bottom:10px;">
+              💡 <strong>എങ്ങനെ പ്രവർത്തിക്കുന്നു:</strong> ഒരിക്കൽ Firebase കണക്റ്റ് ചെയ്താൽ, Shift 1-ൽ ഒരാൾ ഫോണിൽ സേവ് ചെയ്യുന്നത് അടുത്ത നിമിഷം Shift 2-ലുള്ള ആളുടെ ഫോണിൽ തത്സമയം എത്തും. നെറ്റ് കട്ടായാലും ഓഫ്‍ലൈനിൽ ഡാറ്റ സേവ് ആകും.
+            </div>
+
+            <div class="input-field" style="margin-bottom:12px;">
+              <label for="firebaseConfigInput">Paste Firebase Config (JSON അല്ലെങ്കിൽ code snippet):</label>
+              <textarea id="firebaseConfigInput" rows="5" placeholder='Paste your Firebase config object here, e.g.:
+{
+  "apiKey": "AIzaSy...",
+  "authDomain": "wip-boiler.firebaseapp.com",
+  "projectId": "wip-boiler",
+  "storageBucket": "wip-boiler.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123456789:web:..."
+}'></textarea>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+              <button class="btn btn-primary btn-sm" id="btnConnectFirebase">
+                ⚡ Connect Firebase Cloud
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btnDisconnectFirebase">
+                Disconnect / Reset
+              </button>
+              <button class="btn btn-whatsapp btn-sm" id="btnShareFirebaseLink" title="മറ്റ് 2 ഓപ്പറേറ്റർമാർക്കും ലിങ്ക് അയച്ചു കൊടുക്കാൻ">
+                📲 Share Setup Link on WhatsApp
+              </button>
+            </div>
+            <div id="firebaseFeedback" style="margin-top:8px; font-size:0.82rem; font-weight:600;"></div>
+          </div>
+
+          <!-- Instructions Collapsible -->
+          <details style="background:rgba(59, 130, 246, 0.08); border:1px solid rgba(59, 130, 246, 0.2); border-radius:8px; padding:10px 14px; margin-bottom:16px;">
+            <summary style="cursor:pointer; font-weight:700; color:#60a5fa; font-size:0.85rem;">
+              📖 ഫ്രീയായി Google Firebase പ്രോജക്റ്റ് ഉണ്ടാക്കുന്നതെങ്ങനെ? (2 മിനിറ്റ് ഗൈഡ്)
+            </summary>
+            <ol style="margin:10px 0 0 20px; font-size:0.8rem; color:#cbd5e1; line-height:1.6;">
+              <li><a href="https://console.firebase.google.com" target="_blank" style="color:#38bdf8;">console.firebase.google.com</a> തുറക്കുക (Google അക്കൗണ്ട് വഴി ലോഗിൻ ചെയ്യുക).</li>
+              <li><strong>"Add project"</strong> ക്ലിക്ക് ചെയ്ത് പേര് നൽകുക (ഉദാ: <code>wip-boiler</code>).</li>
+              <li>പ്രോജക്റ്റ് ക്രിയേറ്റ് ചെയ്ത ശേഷം ഇടത് മെനുവിലെ <strong>Build ➜ Firestore Database</strong> ക്ലിക്ക് ചെയ്യുക.</li>
+              <li><strong>"Create Database"</strong> നൽകി <strong>"Start in test mode"</strong> തിരഞ്ഞെടുത്ത് Enable ചെയ്യുക.</li>
+              <li>പ്രോജക്റ്റ് സെറ്റിങ്സിൽ (⚙️) പോയി <strong>Web App (&lt;/&gt;)</strong> ക്ലിക്ക് ചെയ്ത് ആപ്പ് ആഡ് ചെയ്യുക.</li>
+              <li>അവിടെ ലഭിക്കുന്ന <code>firebaseConfig</code> കോപ്പി ചെയ്ത് മുകളിലെ ബോക്സിൽ പേസ്റ്റ് ചെയ്ത് <strong>Connect</strong> അടിക്കുക!</li>
+              <li>തുടർന്ന് <strong>"Share Setup Link"</strong> വഴി മറ്റ് രണ്ട് ഓപ്പറേറ്റർമാർക്ക് WhatsApp-ൽ ലിങ്ക് അയച്ചുകൊടുത്താൽ മതിയാകും!</li>
+            </ol>
+          </details>
+        </div>
+
         <div class="card-section">
           <div class="section-header">
             <div class="section-title">⚙️ Factory Settings & Thermax Calibration Table</div>
@@ -650,8 +715,13 @@
     </div>
   </div>
 
-  <!-- Scripts -->
+  <!-- Firebase SDK (Compat version for universal browser support) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <!-- App Scripts -->
   <script src="js/bunker-math.js"></script>
+  <script src="js/firebase-sync.js"></script>
   <script src="js/store.js"></script>
   <script src="js/whatsapp.js"></script>
   <script src="js/export-excel.js"></script>

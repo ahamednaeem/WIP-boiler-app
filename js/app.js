@@ -46,9 +46,16 @@ document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initEventListeners();
   initReferenceTable();
+  initFirebaseIntegration();
   loadCurrentShiftData();
   updateLiveClock();
   setInterval(updateLiveClock, 1000);
+
+  // Re-render when remote shifts or local store changes
+  boilerStore.addChangeListener(() => {
+    loadCurrentShiftData();
+    renderReportsTab();
+  });
 });
 
 /**
@@ -294,6 +301,175 @@ function initEventListeners() {
     };
     reader.readAsText(file);
   });
+
+  // Firebase Cloud Sync UI handlers
+  initFirebaseUIListeners();
+}
+
+/**
+ * Initialize Google Firebase Integration & Auto Hash Config
+ */
+function initFirebaseIntegration() {
+  if (!window.firebaseSync) return;
+
+  // 1. Check if URL has hash config from a shared setup link (#fbcfg=...)
+  try {
+    const hash = window.location.hash;
+    if (hash && hash.includes('fbcfg=')) {
+      const b64 = hash.split('fbcfg=')[1].split('&')[0];
+      const jsonStr = decodeURIComponent(atob(b64));
+      const config = JSON.parse(jsonStr);
+      if (config && config.projectId) {
+        window.firebaseSync.saveConfig(config);
+        // Clear hash from URL for cleanliness
+        history.replaceState(null, document.title, window.location.pathname + window.location.search);
+        alert('✓ Google Firebase Cloud Config imported automatically from shared link!');
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to parse URL hash Firebase config', e);
+  }
+
+  // 2. Setup status listener
+  window.firebaseSync.onStatusChange((status, text) => {
+    updateCloudStatusBadge(status, text);
+  });
+
+  // 3. If config exists, prefill input and initialize
+  const existingConfig = window.firebaseSync.config;
+  if (existingConfig) {
+    const input = document.getElementById('firebaseConfigInput');
+    if (input) input.value = JSON.stringify(existingConfig, null, 2);
+    window.firebaseSync.init();
+  } else {
+    updateCloudStatusBadge('unconfigured', 'Cloud: Local Only');
+  }
+}
+
+/**
+ * Update UI Status Badges
+ */
+function updateCloudStatusBadge(status, text) {
+  const badge = document.getElementById('cloudStatusBadge');
+  const pill = document.getElementById('firebaseStatusPill');
+
+  if (badge) {
+    badge.textContent = text;
+    if (status === 'connected') {
+      badge.style.background = 'rgba(16, 185, 129, 0.2)';
+      badge.style.color = '#34d399';
+      badge.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+    } else if (status === 'offline') {
+      badge.style.background = 'rgba(245, 158, 11, 0.2)';
+      badge.style.color = '#fbbf24';
+      badge.style.border = '1px solid rgba(245, 158, 11, 0.4)';
+    } else if (status === 'error') {
+      badge.style.background = 'rgba(239, 68, 68, 0.2)';
+      badge.style.color = '#f87171';
+      badge.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+    } else {
+      badge.style.background = 'rgba(59, 130, 246, 0.15)';
+      badge.style.color = '#60a5fa';
+      badge.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+    }
+  }
+
+  if (pill) {
+    pill.textContent = `Status: ${text}`;
+    pill.style.color = status === 'connected' ? '#34d399' : (status === 'error' ? '#f87171' : '#94a3b8');
+  }
+}
+
+/**
+ * Event Listeners for Firebase UI in Settings
+ */
+function initFirebaseUIListeners() {
+  const btnConnect = document.getElementById('btnConnectFirebase');
+  const btnDisconnect = document.getElementById('btnDisconnectFirebase');
+  const btnShare = document.getElementById('btnShareFirebaseLink');
+  const feedback = document.getElementById('firebaseFeedback');
+
+  if (btnConnect) {
+    btnConnect.addEventListener('click', async () => {
+      const rawText = document.getElementById('firebaseConfigInput').value.trim();
+      if (!rawText) {
+        alert('ദയവായി Firebase Config നൽകുക (Please paste your Firebase config).');
+        return;
+      }
+
+      let parsedConfig = null;
+      try {
+        // Try strict JSON first
+        parsedConfig = JSON.parse(rawText);
+      } catch (e) {
+        // If user pasted JS snippet e.g. const firebaseConfig = { apiKey: "..." };
+        try {
+          const cleaned = rawText
+            .replace(/^(const|let|var)\s+\w+\s*=\s*/, '')
+            .replace(/;?\s*$/, '')
+            .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":') // quote unquoted keys
+            .replace(/'/g, '"'); // replace single quotes
+          parsedConfig = JSON.parse(cleaned);
+        } catch (err2) {
+          try {
+            // Function eval fallback for valid JS object literal
+            const fn = new Function(`return ${rawText.replace(/^(const|let|var)\s+\w+\s*=\s*/, '').replace(/;?\s*$/, '')}`);
+            parsedConfig = fn();
+          } catch (err3) {
+            feedback.innerHTML = `<span style="color:#ef4444;">❌ Invalid configuration format. Please paste valid JSON or Firebase config object.</span>`;
+            return;
+          }
+        }
+      }
+
+      if (!parsedConfig || !parsedConfig.apiKey || !parsedConfig.projectId) {
+        feedback.innerHTML = `<span style="color:#ef4444;">❌ Missing apiKey or projectId in configuration!</span>`;
+        return;
+      }
+
+      feedback.innerHTML = `<span style="color:#38bdf8;">Connecting to Google Firebase...</span>`;
+      const success = await window.firebaseSync.init(parsedConfig);
+
+      if (success) {
+        feedback.innerHTML = `<span style="color:#10b981;">✓ Firebase Cloud Connected & Synced successfully!</span>`;
+        alert('✓ Google Firebase Cloud വിജയകരമായി കണക്റ്റ് ചെയ്തു! ഇനി മുതൽ ഏത് ഫോണിലിരുന്ന് നൽകുന്ന വിവരങ്ങളും തത്സമയം സിങ്ക് ആകും.');
+      } else {
+        feedback.innerHTML = `<span style="color:#ef4444;">❌ Failed to connect to Firebase. Check internet and Firebase settings.</span>`;
+      }
+    });
+  }
+
+  if (btnDisconnect) {
+    btnDisconnect.addEventListener('click', () => {
+      if (confirm('Firebase ക്ലൗഡ് സിങ്കിങ് ഡിസ്കണക്റ്റ് ചെയ്യണമെന്നുറപ്പാണോ?')) {
+        window.firebaseSync.clearConfig();
+        document.getElementById('firebaseConfigInput').value = '';
+        feedback.innerHTML = `<span style="color:#94a3b8;">Cloud disconnected. Running in Local Storage mode.</span>`;
+      }
+    });
+  }
+
+  if (btnShare) {
+    btnShare.addEventListener('click', () => {
+      const cfg = window.firebaseSync.config;
+      if (!cfg || !cfg.projectId) {
+        alert('ആദ്യം Firebase കണക്റ്റ് ചെയ്യുക, അതിനു ശേഷം ലിങ്ക് ഷെയർ ചെയ്യാം.');
+        return;
+      }
+
+      const b64 = btoa(encodeURIComponent(JSON.stringify(cfg)));
+      const shareUrl = `${window.location.origin}${window.location.pathname}#fbcfg=${b64}`;
+
+      const text = `🏭 *WESTERN INDIA PLYWOODS - BOILER APP*
+📲 *മൊബൈൽ ക്ലൗഡ് സിങ്ക് ആക്റ്റിവേഷൻ ലിങ്ക്:*
+${shareUrl}
+
+👆 *നിങ്ങളുടെ ഫോണിൽ ഈ ലിങ്കിൽ ക്ലിക്ക് ചെയ്താൽ ആപ്പിൽ ക്ലൗഡ് സിങ്കിങ് ഓട്ടോമാറ്റിക്കായി സെറ്റ് ആകും!*
+എല്ലാ ഷിഫ്റ്റ് ഓപ്പറേറ്റർമാരുടെയും ഫോണുകൾ ഇതോടെ തത്സമയം സിങ്ക് ആകും.`;
+
+      shareToWhatsApp(text);
+    });
+  }
 }
 
 /**

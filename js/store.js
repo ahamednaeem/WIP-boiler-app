@@ -1,6 +1,6 @@
 /**
  * Western India Plywoods - Boiler Fuel Management
- * Store & Data Persistence Layer (Offline-First + Auto-LAN Sync)
+ * Store & Data Persistence Layer (Offline-First + Firebase Cloud Sync)
  */
 
 const STORAGE_KEY = 'wip_boiler_shifts_v1';
@@ -10,8 +10,7 @@ const SETTINGS_KEY = 'wip_boiler_settings_v1';
 const DEFAULT_SETTINGS = {
   dustSackWeightKg: 8.0,
   woodChipsBulkDensity: 370.0,
-  weightUnit: 'tonnes',
-  cloudSyncUrl: '/api/shifts' // Defaults to local LAN sync endpoint
+  weightUnit: 'tonnes'
 };
 
 const DEFAULT_OPERATORS = [
@@ -25,7 +24,28 @@ class BoilerStore {
     this.shifts = this.loadShifts();
     this.settings = this.loadSettings();
     this.operators = this.loadOperators();
-    this.fetchRemoteShifts();
+    this.changeListeners = [];
+
+    // Setup Firebase cloud sync listener hook
+    if (typeof window !== 'undefined') {
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.firebaseSync) {
+          window.firebaseSync.onDataUpdate((remoteShifts) => {
+            this.mergeRemoteShifts(remoteShifts);
+          });
+        }
+      });
+    }
+  }
+
+  addChangeListener(cb) {
+    this.changeListeners.push(cb);
+  }
+
+  notifyChange() {
+    this.changeListeners.forEach(cb => {
+      try { cb(); } catch (e) { console.error(e); }
+    });
   }
 
   loadShifts() {
@@ -111,15 +131,51 @@ class BoilerStore {
     this.shifts.sort((a, b) => new Date(b.date + ' ' + (b.shiftStartTime || '00:00')) - new Date(a.date + ' ' + (a.shiftStartTime || '00:00')));
     this.saveShifts();
 
-    // Auto sync to server if available
-    this.syncToCloud(record);
+    // Auto sync to Firebase Cloud if connected
+    if (window.firebaseSync && window.firebaseSync.isInitialized) {
+      window.firebaseSync.saveShift(record);
+    }
 
+    this.notifyChange();
     return record;
   }
 
   deleteShift(id) {
     this.shifts = this.shifts.filter(s => s.id !== id);
     this.saveShifts();
+
+    if (window.firebaseSync && window.firebaseSync.isInitialized) {
+      window.firebaseSync.deleteShift(id);
+    }
+
+    this.notifyChange();
+  }
+
+  mergeRemoteShifts(remoteShifts) {
+    if (!Array.isArray(remoteShifts)) return;
+
+    let hasChanges = false;
+    remoteShifts.forEach(rs => {
+      if (!rs.id) return;
+      const localIdx = this.shifts.findIndex(s => s.id === rs.id);
+      if (localIdx >= 0) {
+        const localTime = new Date(this.shifts[localIdx].updatedAt || 0).getTime();
+        const remoteTime = new Date(rs.updatedAt || 0).getTime();
+        if (remoteTime > localTime) {
+          this.shifts[localIdx] = rs;
+          hasChanges = true;
+        }
+      } else {
+        this.shifts.push(rs);
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges) {
+      this.shifts.sort((a, b) => new Date(b.date + ' ' + (b.shiftStartTime || '00:00')) - new Date(a.date + ' ' + (a.shiftStartTime || '00:00')));
+      this.saveShifts();
+      this.notifyChange();
+    }
   }
 
   getPreviousShiftClosingDepth(currentDate, currentShift) {
@@ -219,49 +275,11 @@ class BoilerStore {
       if (Array.isArray(data.operators)) {
         this.saveOperators(data.operators);
       }
+      this.notifyChange();
       return true;
     } catch (e) {
       console.error('Import failed', e);
       return false;
-    }
-  }
-
-  async syncToCloud(record) {
-    const url = this.settings.cloudSyncUrl || '/api/shifts';
-    try {
-      await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(record)
-      });
-    } catch (e) {
-      // Offline or standalone file mode - local storage already holds it safely
-    }
-  }
-
-  async fetchRemoteShifts() {
-    const url = this.settings.cloudSyncUrl || '/api/shifts';
-    try {
-      const res = await fetch(url);
-      if (res.ok) {
-        const remoteShifts = await res.json();
-        if (Array.isArray(remoteShifts) && remoteShifts.length > 0) {
-          // Merge remote shifts into local storage
-          remoteShifts.forEach(rs => {
-            const idx = this.shifts.findIndex(s => s.id === rs.id);
-            if (idx >= 0) {
-              if (new Date(rs.updatedAt || 0) > new Date(this.shifts[idx].updatedAt || 0)) {
-                this.shifts[idx] = rs;
-              }
-            } else {
-              this.shifts.push(rs);
-            }
-          });
-          this.saveShifts();
-        }
-      }
-    } catch (e) {
-      // Server not running, silently using local storage
     }
   }
 }
