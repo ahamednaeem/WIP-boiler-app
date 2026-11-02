@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Western India Plywoods - Boiler Fuel Management</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <div class="logo-icon">🔥</div>
+        <div class="title-group">
+          <h1>WESTERN INDIA PLYWOODS</h1>
+          <p>ബോയിലർ കൺസംഷൻ & ഷിഫ്റ്റ് മാനേജ്‌മെന്റ് (Boiler Fuel Manager)</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge live"><span class="pulse-dot"></span> 24/7 ACTIVE</span>
+        <span class="badge" id="currentClock">--:--:--</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Shift & Operator Info Bar -->
+    <div class="shift-bar">
+      <div class="input-field">
+        <label for="shiftDate">📅 തീയതി (Date)</label>
+        <input type="date" id="shiftDate">
+      </div>
+      <div class="input-field">
+        <label for="shiftSelect">⏰ ഷിഫ്റ്റ് (Shift)</label>
+        <select id="shiftSelect">
+          <option value="Shift 1">Shift 1 (06:30 AM – 02:30 PM)</option>
+          <option value="Shift 2">Shift 2 (02:30 PM – 10:30 PM)</option>
+          <option value="Shift 3">Shift 3 (10:30 PM – 06:30 AM)</option>
+        </select>
+      </div>
+      <div class="input-field">
+        <label for="operatorSelect">👷 ഷിഫ്റ്റ് ഇൻ-ചാർജ്ജ് (Operator)</label>
+        <select id="operatorSelect">
+          <option value="Operator 1">Operator 1</option>
+          <option value="Operator 2">Operator 2</option>
+          <option value="Operator 3">Operator 3</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Live KPI Summary Row -->
+    <div class="kpi-row">
+      <div class="kpi-card thermax">
+        <div class="kpi-title">
+          <span>THERMAX (ചിപ്സ്)</span>
+          <span>WOOD CHIPS</span>
+        </div>
+        <div class="kpi-value"><span id="kpiThermax">0.00</span> <span>Tonnes</span></div>
+        <div class="kpi-sub" id="kpiThermaxSub">Open: - | Close: -</div>
+      </div>
+
+      <div class="kpi-card maxtherm">
+        <div class="kpi-title">
+          <span>MAX THERM</span>
+          <span>LOGS + DUST</span>
+        </div>
+        <div class="kpi-value"><span id="kpiMaxTherm">0.00</span> <span>Tonnes</span></div>
+        <div class="kpi-sub" id="kpiMaxThermSub">Logs: 0 T | Dust: 0 T</div>
+      </div>
+
+      <div class="kpi-card complock">
+        <div class="kpi-title">
+          <span>COMPLOCK</span>
+          <span>WOOD LOGS</span>
+        </div>
+        <div class="kpi-value"><span id="kpiComplock">0.00</span> <span>Tonnes</span></div>
+        <div class="kpi-sub" id="kpiComplockSub">Lorries: 0</div>
+      </div>
+
+      <div class="kpi-card total">
+        <div class="kpi-title">
+          <span>ആകെ കൺസംഷൻ</span>
+          <span>SHIFT TOTAL</span>
+        </div>
+        <div class="kpi-value text-success"><span id="kpiGrandTotal">0.00</span> <span>Tonnes</span></div>
+        <div class="kpi-sub" id="kpiShiftStatus">Current Shift Active</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-container">
+      <div class="tabs-nav">
+        <button class="tab-btn thermax active" data-tab="tabThermax">🪵 1. Thermax (ചിപ്സ്)</button>
+        <button class="tab-btn maxtherm" data-tab="tabMaxTherm">🪵🔥 2. Max Therm (ലോഗ്സ്+ഡസ്റ്റ്)</button>
+        <button class="tab-btn complock" data-tab="tabComplock">🪵 3. Complock (ലോഗ്സ്)</button>
+        <button class="tab-btn reports" data-tab="tabReports">📊 റിപ്പോർട്ടുകൾ & ഡെയ്‌ലി</button>
+        <button class="tab-btn" data-tab="tabSettings">⚙️ സെറ്റിങ്സ് & ടേബിൾ</button>
+      </div>
+
+      <!-- TAB 1: THERMAX BOILER -->
+      <div class="tab-pane active" id="tabThermax">
+        <div class="card-section">
+          <div class="section-header">
+            <div>
+              <div class="section-title text-thermax">🔥 Thermax Boiler - വുഡ് ചിപ്സ് കൺസംഷൻ</div>
+              <div class="section-subtitle">ബങ്കർ ലെവൽ ഡെപ്ത് (cm) & അൺലോഡ് ചെയ്ത ലോറികളുടെ വെയിറ്റ്</div>
+            </div>
+            <span class="badge" style="background:#f59e0b22; color:#f59e0b; border: 1px solid #f59e0b44;">Bunker Cap: 55.19 m³ / 20.42 T</span>
+          </div>
+
+          <div class="bunker-grid">
+            <!-- Left Column: Inputs & Calculations -->
+            <div>
+              <!-- Opening Bunker Depth Box -->
+              <div class="depth-entry-box">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <label style="font-weight:700; font-size:0.95rem; color:#f8fafc;">
+                    📏 1. Opening Bunker Depth (ഷിഫ്റ്റ് തുടങ്ങുമ്പോൾ)
+                  </label>
+                  <span id="autoHandoverBadge" class="badge" style="display:none; background:#10b98122; color:#34d399;">
+                    ✓ Auto-Handover
+                  </span>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:8px; align-items:center;">
+                  <div class="input-field" style="flex:1;">
+                    <input type="number" id="thOpenDepth" placeholder="Depth in cm (0 - 753)" step="1" min="0" max="753">
+                  </div>
+                  <button class="btn btn-secondary btn-sm" id="btnRefreshPrevDepth" title="മുൻപത്തെ ഷിഫ്റ്റിലെ closing depth എടുക്കുക">
+                    🔄 Fetch Previous
+                  </button>
+                </div>
+                <div class="depth-calc-results">
+                  <div class="res-item">
+                    <span class="res-label">Opening Volume</span>
+                    <span class="res-value" id="thOpenVol">0.000 m³</span>
+                  </div>
+                  <div class="res-item">
+                    <span class="res-label">Opening Stock</span>
+                    <span class="res-value" id="thOpenStock">0.00 Tonnes</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chips Lorries Added Box -->
+              <div class="depth-entry-box">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <label style="font-weight:700; font-size:0.95rem; color:#f8fafc;">
+                    🚛 2. ഈ ഷിഫ്റ്റിൽ ഇറക്കിയ ചിപ്സ് ലോറികൾ (Incoming Lorries)
+                  </label>
+                  <button class="btn btn-primary btn-sm" id="btnAddThermaxLorry">
+                    + Add Lorry
+                  </button>
+                </div>
+
+                <div class="lorry-list-wrap">
+                  <table class="lorry-table" id="thLorryTable">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Vehicle No</th>
+                        <th>Net Weight (Tonnes)</th>
+                        <th>Weight (kg)</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="thLorryTableBody">
+                      <tr><td colspan="5" style="text-align:center; color:#64748b;">ഈ ഷിഫ്റ്റിൽ ലോറികൾ ചേർത്തിട്ടില്ല (No lorries added yet)</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style="margin-top:12px; display:flex; justify-content:space-between; background:#1e293b; padding:10px 14px; border-radius:8px;">
+                  <span style="font-weight:600; color:#94a3b8;">ആകെ ലോറികളിൽ നിന്നുള്ള ചിപ്സ്:</span>
+                  <span style="font-weight:800; color:#f59e0b;" id="thTotalIncomingT">0.00 Tonnes (0 kg)</span>
+                </div>
+              </div>
+
+              <!-- Closing Bunker Depth Box -->
+              <div class="depth-entry-box">
+                <label style="font-weight:700; font-size:0.95rem; color:#f8fafc;">
+                  📏 3. Closing Bunker Depth (ഷിഫ്റ്റ് തീരുമ്പോൾ)
+                </label>
+                <div class="input-field" style="margin-top:8px;">
+                  <input type="number" id="thCloseDepth" placeholder="Depth in cm (0 - 753)" step="1" min="0" max="753">
+                </div>
+                <div class="depth-calc-results">
+                  <div class="res-item">
+                    <span class="res-label">Closing Volume</span>
+                    <span class="res-value" id="thCloseVol">0.000 m³</span>
+                  </div>
+                  <div class="res-item">
+                    <span class="res-label">Closing Stock</span>
+                    <span class="res-value" id="thCloseStock">0.00 Tonnes</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Thermax Final Consumption Equation Card -->
+              <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); border-radius:10px; padding:14px;">
+                <div style="font-size:0.85rem; color:#fcd34d; font-weight:600;">
+                  📐 കൺസംഷൻ സമവാക്യം: (Opening Stock + Incoming Lorries) - Closing Stock
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:8px;">
+                  <span style="font-size:1rem; font-weight:700; color:#fff;">THERMAX SHIFT CONSUMPTION:</span>
+                  <span style="font-size:1.6rem; font-weight:800; color:#f59e0b;" id="thFinalConsumption">0.00 Tonnes</span>
+                </div>
+                <div style="font-size:0.8rem; color:#cbd5e1; text-align:right;" id="thFinalConsumptionKg">0 kg</div>
+              </div>
+
+            </div>
+
+            <!-- Right Column: Visual Bunker Gauge -->
+            <div class="bunker-graphic-card">
+              <div style="font-weight:700; font-size:0.85rem; color:#e2e8f0; margin-bottom:8px;">
+                📊 BUNKER CROSS-SECTION
+              </div>
+              <div class="bunker-svg-wrap">
+                <svg class="bunker-svg" viewBox="0 0 200 320">
+                  <defs>
+                    <linearGradient id="woodChipsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#b45309" />
+                      <stop offset="50%" stop-color="#d97706" />
+                      <stop offset="100%" stop-color="#92400e" />
+                    </linearGradient>
+                    <!-- Clip path for the bunker inner shape -->
+                    <clipPath id="bunkerShape">
+                      <!-- Rectangular top: 20 to 180 (width 160), y: 20 to 120 -->
+                      <!-- Hoppers bottom: two outlets at y=300 -->
+                      <polygon points="20,20 180,20 180,120 155,300 125,300 100,180 75,300 45,300 20,120" />
+                    </clipPath>
+                  </defs>
+
+                  <!-- Bunker outer casing -->
+                  <polygon points="16,16 184,16 184,120 159,304 121,304 100,176 79,304 41,304 16,120" 
+                           fill="#1e293b" stroke="#475569" stroke-width="4" />
+
+                  <!-- Bunker Interior fill background (empty) -->
+                  <polygon points="20,20 180,20 180,120 155,300 125,300 100,180 75,300 45,300 20,120" 
+                           fill="#0f172a" />
+
+                  <!-- Fuel Level Fill Rect (clipped by bunkerShape) -->
+                  <rect id="svgFuelFill" x="0" y="20" width="200" height="280" 
+                        fill="url(#woodChipsGrad)" clip-path="url(#bunkerShape)" />
+
+                  <!-- Level line marker -->
+                  <line id="svgLevelLine" x1="16" y1="20" x2="184" y2="20" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4" />
+
+                  <!-- Depth labels -->
+                  <text x="188" y="24" fill="#94a3b8" font-size="8">0cm</text>
+                  <text x="188" y="122" fill="#94a3b8" font-size="8">247cm</text>
+                  <text x="160" y="304" fill="#94a3b8" font-size="8">753cm</text>
+                </svg>
+              </div>
+
+              <div class="bunker-level-pill" id="bunkerVisualStatus">
+                Fill Level: 0 cm | 55.19 m³
+              </div>
+
+              <div style="font-size:0.75rem; color:#94a3b8; text-align:center; margin-top:10px; line-height:1.4;">
+                Wood Chips Density: <strong>370 kg/m³</strong><br>
+                Rectangular Depth: 247 cm<br>
+                Hopper Depth: 506 cm
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: MAX THERM BOILER -->
+      <div class="tab-pane" id="tabMaxTherm">
+        <div class="card-section">
+          <div class="section-header">
+            <div>
+              <div class="section-title text-maxtherm">🪵🔥 Max Therm Boiler - വുഡ് ലോഗ്സ് & പ്ലൈവുഡ് ഡസ്റ്റ്</div>
+              <div class="section-subtitle">ഡയറക്റ്റ് ഫീഡിംഗ് (ബങ്കർ ഇല്ല) - വുഡ് ലോഗ്സ് ലോറികളും ഡസ്റ്റ് ചാക്കുകളും</div>
+            </div>
+            <span class="badge" style="background:#ef444422; color:#ef4444; border: 1px solid #ef444444;">1 Sack = 8 kg Default</span>
+          </div>
+
+          <!-- Section A: Wood Logs Lorries -->
+          <div class="depth-entry-box">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label style="font-weight:700; font-size:0.95rem; color:#f8fafc;">
+                🚛 1. വുഡ് ലോഗ്സ് ലോറികൾ (Wood Logs Lorries)
+              </label>
+              <button class="btn btn-primary btn-sm" id="btnAddMaxThermLorry">
+                + Add Logs Lorry
+              </button>
+            </div>
+
+            <div class="lorry-list-wrap">
+              <table class="lorry-table" id="mtLorryTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Vehicle No</th>
+                    <th>Net Weight (Tonnes)</th>
+                    <th>Weight (kg)</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="mtLorryTableBody">
+                  <tr><td colspan="5" style="text-align:center; color:#64748b;">വുഡ് ലോഗ്സ് ലോറികൾ ചേർത്തിട്ടില്ല (No wood logs lorries added)</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="margin-top:12px; display:flex; justify-content:space-between; background:#1e293b; padding:10px 14px; border-radius:8px;">
+              <span style="font-weight:600; color:#94a3b8;">വുഡ് ലോഗ്സ് ആകെ:</span>
+              <span style="font-weight:800; color:#ef4444;" id="mtWoodLogsTotal">0.00 Tonnes (0 kg)</span>
+            </div>
+          </div>
+
+          <!-- Section B: Plywood Dust Sacks -->
+          <div class="depth-entry-box">
+            <label style="font-weight:700; font-size:0.95rem; color:#f8fafc;">
+              📦 2. പ്ലൈവുഡ് ഡസ്റ്റ് ചാക്കുകൾ (Plywood Dust Sacks)
+            </label>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:8px;">
+              <div class="input-field">
+                <label for="mtDustSacks">ചാക്കുകളുടെ എണ്ണം (No. of Sacks)</label>
+                <input type="number" id="mtDustSacks" placeholder="e.g. 150" step="1" min="0">
+              </div>
+              <div class="input-field">
+                <label for="mtSackWeight">ഒരു ചാക്കിന്റെ ഭാരം (kg/sack)</label>
+                <input type="number" id="mtSackWeight" value="8" step="0.1" min="1">
+              </div>
+            </div>
+
+            <div class="depth-calc-results" style="margin-top:12px;">
+              <div class="res-item">
+                <span class="res-label">Total Dust Weight (kg)</span>
+                <span class="res-value" id="mtDustKg">0 kg</span>
+              </div>
+              <div class="res-item">
+                <span class="res-label">Total Dust Weight (Tonnes)</span>
+                <span class="res-value" id="mtDustTonnes">0.00 Tonnes</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Max Therm Final Total Card -->
+          <div style="background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.3); border-radius:10px; padding:14px;">
+            <div style="font-size:0.85rem; color:#fca5a5; font-weight:600;">
+              📐 കൺസംഷൻ സമവാക്യം: Wood Logs Weight + Dust Weight
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:8px;">
+              <span style="font-size:1rem; font-weight:700; color:#fff;">MAX THERM TOTAL CONSUMPTION:</span>
+              <span style="font-size:1.6rem; font-weight:800; color:#ef4444;" id="mtFinalConsumption">0.00 Tonnes</span>
+            </div>
+            <div style="font-size:0.8rem; color:#cbd5e1; text-align:right;" id="mtFinalConsumptionKg">0 kg</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 3: COMPLOCK BOILER -->
+      <div class="tab-pane" id="tabComplock">
+        <div class="card-section">
+          <div class="section-header">
+            <div>
+              <div class="section-title text-complock">🪵 Complock Boiler - വുഡ് ലോഗ്സ് കൺസംഷൻ</div>
+              <div class="section-subtitle">ഡയറക്റ്റ് ഫീഡിംഗ് (വുഡ് ലോഗ്സ് ലോറികൾ മാത്രം)</div>
+            </div>
+            <span class="badge" style="background:#3b82f622; color:#3b82f6; border: 1px solid #3b82f644;">Wood Logs Only</span>
+          </div>
+
+          <div class="depth-entry-box">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label style="font-weight:700; font-size:0.95rem; color:#f8fafc;">
+                🚛 വുഡ് ലോഗ്സ് ലോറികൾ (Wood Logs Lorries)
+              </label>
+              <button class="btn btn-primary btn-sm" id="btnAddComplockLorry">
+                + Add Logs Lorry
+              </button>
+            </div>
+
+            <div class="lorry-list-wrap">
+              <table class="lorry-table" id="cpLorryTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Vehicle No</th>
+                    <th>Net Weight (Tonnes)</th>
+                    <th>Weight (kg)</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="cpLorryTableBody">
+                  <tr><td colspan="5" style="text-align:center; color:#64748b;">വുഡ് ലോഗ്സ് ലോറികൾ ചേർത്തിട്ടില്ല (No lorries added)</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="margin-top:12px; display:flex; justify-content:space-between; background:#1e293b; padding:10px 14px; border-radius:8px;">
+              <span style="font-weight:600; color:#94a3b8;">ആകെ വുഡ് ലോഗ്സ്:</span>
+              <span style="font-weight:800; color:#3b82f6;" id="cpWoodLogsTotal">0.00 Tonnes (0 kg)</span>
+            </div>
+          </div>
+
+          <!-- Complock Final Total Card -->
+          <div style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.3); border-radius:10px; padding:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-size:1rem; font-weight:700; color:#fff;">COMPLOCK TOTAL CONSUMPTION:</span>
+              <span style="font-size:1.6rem; font-weight:800; color:#3b82f6;" id="cpFinalConsumption">0.00 Tonnes</span>
+            </div>
+            <div style="font-size:0.8rem; color:#cbd5e1; text-align:right;" id="cpFinalConsumptionKg">0 kg</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 4: REPORTS & 24-HR DAILY -->
+      <div class="tab-pane" id="tabReports">
+        <!-- Daily 24-Hour Rollup Section -->
+        <div class="card-section">
+          <div class="section-header">
+            <div>
+              <div class="section-title text-success">📊 24-Hour Daily Production Summary</div>
+              <div class="section-subtitle">24 മണിക്കൂറിലെ ആകെ കൺസംഷൻ (Shift 1 + Shift 2 + Shift 3)</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-whatsapp btn-sm" id="btnShareDailyWhatsApp">
+                💬 WhatsApp Daily
+              </button>
+              <button class="btn btn-excel btn-sm" id="btnExportCSV">
+                📥 Export Excel / CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="kpi-row" style="margin-top:0;">
+            <div class="kpi-card thermax">
+              <div class="kpi-title">Thermax 24h</div>
+              <div class="kpi-value"><span id="dailyThermaxT">0.00</span> <span>Tonnes</span></div>
+            </div>
+            <div class="kpi-card maxtherm">
+              <div class="kpi-title">Max Therm 24h</div>
+              <div class="kpi-value"><span id="dailyMaxThermT">0.00</span> <span>Tonnes</span></div>
+            </div>
+            <div class="kpi-card complock">
+              <div class="kpi-title">Complock 24h</div>
+              <div class="kpi-value"><span id="dailyComplockT">0.00</span> <span>Tonnes</span></div>
+            </div>
+            <div class="kpi-card total">
+              <div class="kpi-title">24H PLANT TOTAL</div>
+              <div class="kpi-value text-success"><span id="dailyGrandTotalT">0.00</span> <span>Tonnes</span></div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div style="font-weight:700; font-size:0.9rem; margin-bottom:8px;">ഈ ദിവസത്തെ ഷിഫ്റ്റുകൾ (Logged Shifts for Selected Date):</div>
+            <div id="dayShiftsContainer" style="display:flex; flex-direction:column; gap:8px;">
+              <!-- Dynamic shift cards injected by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- History of All Shifts Table -->
+        <div class="card-section">
+          <div class="section-header">
+            <div class="section-title">🕒 All Recorded Shift Logs</div>
+            <button class="btn btn-secondary btn-sm" id="btnRefreshHistory">🔄 Refresh</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="lorry-table" id="allShiftsTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Shift</th>
+                  <th>Operator</th>
+                  <th>Thermax (T)</th>
+                  <th>Max Therm (T)</th>
+                  <th>Complock (T)</th>
+                  <th>Total (T)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="allShiftsTableBody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: SETTINGS & CALIBRATION TABLE -->
+      <div class="tab-pane" id="tabSettings">
+        <div class="card-section">
+          <div class="section-header">
+            <div class="section-title">⚙️ Factory Settings & Thermax Calibration Table</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:20px;">
+            <div class="input-field">
+              <label>Wood Chips Bulk Density (kg/m³)</label>
+              <input type="number" id="settingBulkDensity" value="370">
+            </div>
+            <div class="input-field">
+              <label>Max Therm Dust Sack Weight (kg)</label>
+              <input type="number" id="settingDustSackWeight" value="8">
+            </div>
+            <div class="input-field" style="justify-content: flex-end;">
+              <button class="btn btn-primary" id="btnSaveSettings">Save Settings</button>
+            </div>
+          </div>
+
+          <!-- Quick Depth Lookup Calculator -->
+          <div class="depth-entry-box" style="margin-bottom:20px;">
+            <div style="font-weight:700; color:#38bdf8; margin-bottom:8px;">
+              🔍 Quick Sounding Level Lookup (ഡെപ്ത് നൽകി സ്റ്റോക്ക് പരിശോധിക്കാം)
+            </div>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <input type="number" id="quickLookupDepth" placeholder="Depth in cm (e.g. 150)" style="max-width:200px;">
+              <div id="quickLookupResult" style="font-weight:700; color:#f8fafc;">
+                Volume: -- m³ | Stock: -- Tonnes (-- kg)
+              </div>
+            </div>
+          </div>
+
+          <!-- Reference Table from Engineering Document -->
+          <div style="font-weight:700; font-size:0.9rem; margin-bottom:8px; color:#cbd5e1;">
+            📋 Thermax Bunker - Level to Volume Reference Table (0 cm - 753 cm)
+          </div>
+          <div class="ref-table-wrap">
+            <table class="lorry-table" id="bunkerRefTable">
+              <thead>
+                <tr>
+                  <th>Distance from Top D (cm)</th>
+                  <th>Current Volume (m³)</th>
+                  <th>Estimated Stock (kg)</th>
+                  <th>Estimated Stock (Tonnes)</th>
+                </tr>
+              </thead>
+              <tbody id="bunkerRefTableBody">
+                <!-- Populated by bunker-math.js -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Data Backup & Restore -->
+          <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--border-color); display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" id="btnBackupData">💾 Download Backup (JSON)</button>
+            <label class="btn btn-secondary btn-sm" style="margin:0; cursor:pointer;">
+              📂 Restore Backup (JSON)
+              <input type="file" id="fileRestoreInput" accept=".json" style="display:none;">
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Notes & Remarks Card -->
+    <div class="card-section" style="margin-top:16px;">
+      <div class="input-field">
+        <label for="shiftNotes">📝 ഷിഫ്റ്റ് കുറിപ്പുകൾ (Shift Notes / Remarks)</label>
+        <textarea id="shiftNotes" rows="2" placeholder="മെയിന്റനൻസ് വിവരങ്ങൾ, പ്രഷർ അല്ലെങ്കിൽ എന്തെങ്കിലും പ്രത്യേക വിവരങ്ങൾ ഉണ്ടെങ്കിൽ ഇവിടെ രേഖപ്പെടുത്താം..."></textarea>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Floating Action Bar -->
+  <div class="bottom-action-bar">
+    <div class="total-pill">
+      Shift Fuel Total: <strong id="barTotalTonnes">0.00 T</strong>
+    </div>
+    <div class="action-buttons-group">
+      <button class="btn btn-whatsapp" id="btnShareWhatsApp">
+        💬 WhatsApp
+      </button>
+      <button class="btn btn-save-shift" id="btnSaveShift">
+        💾 Save Shift Log
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: Add Lorry Weighment -->
+  <div class="modal-overlay" id="lorryModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalTitle" style="color:#fff;">🚛 Add Lorry Weighment</h3>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <form id="lorryForm">
+        <input type="hidden" id="modalTargetBoiler" value="thermax">
+        
+        <div class="input-field" style="margin-bottom:12px;">
+          <label for="modalVehicleNo">ലോറി നമ്പർ (Vehicle / Lorry No)</label>
+          <input type="text" id="modalVehicleNo" placeholder="e.g. KL-13-AB-1234">
+        </div>
+
+        <div style="display:flex; gap:16px; margin-bottom:12px;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem;">
+            <input type="radio" name="modalWeightMode" value="net" checked> Direct Net Weight
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem;">
+            <input type="radio" name="modalWeightMode" value="gross_tare"> Gross - Tare
+          </label>
+        </div>
+
+        <!-- Mode 1: Direct Net -->
+        <div id="modeDirectNet">
+          <div style="display:grid; grid-template-columns: 1fr 100px; gap:10px; margin-bottom:12px;">
+            <div class="input-field">
+              <label for="modalNetWeight">Net Weight</label>
+              <input type="number" id="modalNetWeight" step="0.001" placeholder="e.g. 14.50">
+            </div>
+            <div class="input-field">
+              <label for="modalNetUnit">Unit</label>
+              <select id="modalNetUnit">
+                <option value="tonnes">Tonnes</option>
+                <option value="kg">kg</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode 2: Gross - Tare -->
+        <div id="modeGrossTare" style="display:none; margin-bottom:12px;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+            <div class="input-field">
+              <label for="modalGrossWeight">Gross Weight (kg)</label>
+              <input type="number" id="modalGrossWeight" step="1" placeholder="e.g. 25000">
+            </div>
+            <div class="input-field">
+              <label for="modalTareWeight">Tare Weight (kg)</label>
+              <input type="number" id="modalTareWeight" step="1" placeholder="e.g. 10000">
+            </div>
+          </div>
+          <div style="background:#0f172a; padding:8px 12px; border-radius:6px; font-size:0.85rem; color:#38bdf8;">
+            Calculated Net: <strong id="modalCalcNet">0 kg (0.00 Tonnes)</strong>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+          <button type="button" class="btn btn-secondary" id="modalCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="modalSave">Save Lorry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/bunker-math.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/whatsapp.js"></script>
+  <script src="js/export-excel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

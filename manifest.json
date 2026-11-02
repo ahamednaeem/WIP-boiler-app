@@ -1,0 +1,16 @@
+{
+  "name": "Western India Plywoods - Boiler Fuel Manager",
+  "short_name": "WIP Boiler",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "description": "Boiler Fuel Consumption & Shift Coordination System for Western India Plywoods (Thermax, Max Therm, Complock)",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
